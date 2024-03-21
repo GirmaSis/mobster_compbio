@@ -68,6 +68,19 @@
 #' print(x$best)
 #'
 #' lapply(x$runs[1:3], plot)
+
+library(cli)
+library(sads)
+library(ggplot2)
+library(ggpubr)
+library(cowplot)
+library(ctree)
+library(vcfR)
+library(easypar)
+library(pio)
+library(crayon)
+
+x = merged_vcf_DP_and_VAF_last
 mobster_fit = function(x,
                        K = 1:3,
                        samples = 5,
@@ -84,31 +97,19 @@ mobster_fit = function(x,
                        N_cutoff = 10,
                        auto_setup = NULL,
                        silent = FALSE,
-                       description = "My MOBSTER model")
-{
+                       description = "My MOBSTER model") {
   pio::pioHdr(paste0("MOBSTER fit"))
   cat('\n')
   
   # Check for basic input requirements
-  mobster:::check_input(x,
-              K,
-              samples,
-              init,
-              tail,
-              epsilon,
-              maxIter,
-              fit.type,
-              seed,
-              model.selection,
-              trace)
+  mobster:::check_input(x, K, samples, init, tail, epsilon, maxIter, fit.type, seed, model.selection, trace)
   
   X = tibble::as_tibble(x)
   
-  mobster:::m_ok("Loaded input data, n = {.value {nrow(x)}}.") %>% cli::cli_text()
+  cli::cli_text("Loaded input data, n = {.value {nrow(x)}}.")
   
   ###################### Auto setup of parameters
-  if (!is.null(auto_setup))
-  {
+  if (!is.null(auto_setup)) {
     # Get the parameters, checks they are known, throws errors.
     template = mobster:::auto_setup(auto_setup)
     
@@ -135,31 +136,22 @@ mobster_fit = function(x,
   best = obj = runs = NULL
   
   # Configurations that will be used for model selection
-  tests = expand.grid(
-    K = K,
-    tail = tail,
-    Run = 1:samples,
-    stringsAsFactors = FALSE
-  )
+  tests = expand.grid(K = K, tail = tail, Run = 1:samples, stringsAsFactors = FALSE)
   ntests = nrow(tests)
   
   ###################### Print message
-  mobster:::m_txt(
-    "n = {.value {nrow(x)}}. Mixture with k = {.field {paste(K, collapse = ',')}} Beta(s). Pareto tail: {.field {tail}}. Output clusters with \u03c0 > {.value {pi_cutoff}} and n > {.value {N_cutoff}}."
-  ) %>% cli::cli_text()
+  cli::cli_text("n = {.value {nrow(x)}}. Mixture with k = {.field {paste(K, collapse = ',')}} Beta(s). Pareto tail: {.field {tail}}. Output clusters with π > {.value {pi_cutoff}} and n > {.value {N_cutoff}}.")
   
-  if (!is.null(auto_setup))
-    mobster:::m_wrn("mobster automatic setup {.field {auto_setup}} for the analysis.") %>% cli::cli_text()
-  else
-    mobster:::m_txt(
-      'Custom fit by {.field {ifelse(fit.type == \'MM\', "Moments-matching", "Maximum-Likelihood")}} in up to {.value {maxIter}} steps, with \u03B5 = {.value {epsilon}} and {.field {init}} initialisation.'
-    ) %>% cli::cli_text()
+  if (!is.null(auto_setup)) {
+    cli::cli_text("mobster automatic setup {.field {auto_setup}} for the analysis.")
+  } else {
+    cli::cli_text('Custom fit by {.field {ifelse(fit.type == "MM", "{.field Moments-matching}", "{.field Maximum-Likelihood}")}} in up to {.value {maxIter}} steps, with ε = {.value {epsilon}} and {.field {init}} initialisation.')
+  }
   
-  mobster:::m_txt(
-    'Scoring ({.value {ifelse(parallel, green("with parallel"), red("without parallel"))}}) {.value {samples}} x {.value {length(K)}} x {.value {length(tail)}} = {.field {ntests}} models by {.field {model.selection}}.'
-  ) %>% cli::cli_text()
+  # Revised conditional text with correct cli syntax
+  scoring_message <- ifelse(parallel, "{.green with parallel}", "{.red without parallel}")
+  cli::cli_text("Scoring {scoring_message} {.value {samples}} x {.value {length(K)}} x {.value {length(tail)}} = {.field {ntests}} models by {.field {model.selection}}.")
   cat('\n')
-  
   
   # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   # Fits are obtained using the easypar package
@@ -231,8 +223,9 @@ mobster_fit = function(x,
   model$model.selection = model.selection
   
   ###### SHOW BEST FIT
-  # cli::cli_alert_info(paste(bold("BEST:"), model.selection))
-  print.dbpmm(model$best)
+  #cli::cli_alert_info(paste(bold("BEST:"), model.selection))
+  #print.dbpmm(model$best)
+  print(model$best)
   
   return(model)
 }

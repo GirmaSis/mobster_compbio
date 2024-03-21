@@ -1,4 +1,4 @@
-#' Return the data with the hard clustering assigments.
+source#' Return the data with the hard clustering assigments.
 #' 
 #' @description Extract the clustering assignments, and return the data.
 #' Assignments can be computed subsetting the mutations that have posterior

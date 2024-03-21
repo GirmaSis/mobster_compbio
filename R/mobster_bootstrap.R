@@ -44,7 +44,7 @@ mobster_bootstrap = function(x,
   )
   cat('\n')
   
-  is_mobster_fit(x)
+  #is_mobster_fit(x)
   stopifnot(bootstrap %in% c('parametric', 'nonparametric'))
   
   # pio::pioTit(paste0("Bootstrapping for this MOBSTER model"))

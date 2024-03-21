@@ -2,7 +2,7 @@
 # 
 # require(dplyr)
 # 
-# file = 'strelka-example.vcf'
+ file = 'merged_vcf.RDS'
 # DP_column = 'DP'
 # NV_column = 'NV'
 
@@ -44,7 +44,7 @@
 #' load_vcf(file = 'strelka-example.vcf', DP_column = 'gt_DP', NV_column = 'gt_DP2')
 load_vcf = function(file,
                     DP_column = 'DP',
-                    NV_column = 'NV')
+                    NV_column = 'AF')
 {
   if (!requireNamespace("vcfR", quietly = TRUE)) {
     stop("Package \"vcfR\" needed for this function to work. Please install it.",
@@ -73,14 +73,21 @@ load_vcf = function(file,
   if(!(DP_column %in% cn)) stop("Depth column ", DP_column, " is not in the VCF columns: ", paste(cn, collapse = ', '), '.')
   if(!(NV_column %in% cn)) stop("Number of variants column ", NV_column, " is not in the VCF columns: ", paste(cn, collapse = ', '), '.')
   
-  all_data = all_data %>%
-    dplyr::rename(DP = !!DP_column, NV = !!NV_column) %>%
-    dplyr::mutate(DP = as.numeric(DP), NV = as.numeric(NV), VAF = NV/DP)
+  all_data <- all_data %>%
+    mutate(
+      # Use gt_DP directly for depth
+      DP = as.numeric(DP),
+      # Convert gt_TIR string to numeric counts of variant-supporting reads
+      AF = sapply(strsplit(as.character(AF), ","), function(x) sum(as.numeric(x))),
+      # Calculate VAF as the number of variant-supporting reads divided by total depth
+      VAF = DP / AF
+    )
   
   if(any(is.na(all_data$VAF))) 
   {
     cli::cli_alert_warning("There are NA values in the VAF field, plelase remove those.")
   }
   
-  all_data
+ return(all_data)
+  
 }
